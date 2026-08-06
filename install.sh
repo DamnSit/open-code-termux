@@ -10,6 +10,7 @@ set -e
 
 VERSION="1.18.14"
 EXPECTED_SHA256="118df79cf90d3362efb574ab119059083c536b430e1dc8017552cc8a0b0257d7"
+INSTALLER_REV="3"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 SRC="$(cd "$(dirname "$0")" && pwd)"
@@ -20,7 +21,7 @@ ARCH="$(uname -m)"
 [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || { echo "[!] butuh aarch64, punya: $ARCH"; exit 1; }
 
 mkdir -p "$DEST" "$PREFIX/bin" "$WORK"
-echo "[*] opencode $VERSION (musl aarch64) -> $DEST"
+echo "[*] installer rev $INSTALLER_REV — opencode $VERSION (musl aarch64) -> $DEST"
 
 # ------------------------------------------------------------
 # 1. Ambil binary opencode: pakai file lokal kalau ada, kalau
@@ -106,6 +107,12 @@ exec /data/data/com.termux/files/usr/lib/opencode/ld-musl-aarch64.so.1 \
   /data/data/com.termux/files/usr/lib/opencode/opencode "$@"
 EOF
 chmod 755 "$PREFIX/bin/opencode"
+
+# cek launcher benar-benar terpasang dengan fix LD_PRELOAD
+if ! grep -q 'unset LD_PRELOAD' "$PREFIX/bin/opencode"; then
+  echo "[!] launcher gagal ditulis (versi install.sh lama?) — cari 'rev 3' di output"
+  exit 1
+fi
 
 # ------------------------------------------------------------
 # 4. Verifikasi

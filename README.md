@@ -88,6 +88,7 @@ release terbaru repo ini).
 | `sha256 mismatch` | Download korup. Hapus `~/.cache/opencode-termux` lalu jalankan ulang |
 | `not found: libstdc++.so.6` | Instalasi lama. Hapus `$PREFIX/lib/opencode` lalu `sh install.sh` lagi |
 | `Error relocating ... libtermux-exec-ld-preload.so: symbol not found` | `LD_PRELOAD` bionic dari `termux-exec` mengganggu loader musl. Update launcher: jalankan `git pull` lalu `sh install.sh` lagi (versi baru otomatis mengosongkan `LD_PRELOAD`) |
+| Output installer tidak menampilkan `rev 3` | Installer yang diunduh masih versi lama (cache CDN raw GitHub). Unduh ulang atau pakai URL commit: `curl -L -o install.sh https://raw.githubusercontent.com/DamnSit/open-code-termux/main/install.sh?x=$(date +%s)` |
 | Layar TUI berantakan | `export TERM=xterm-256color` sebelum `opencode` |
 
 ## Cara Kerja
