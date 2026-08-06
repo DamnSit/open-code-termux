@@ -97,6 +97,10 @@ cat > "$PREFIX/bin/opencode" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/sh
 # Binary musl opencode tidak bisa jalan langsung di Termux (bionic libc).
 # Loader musl dipanggil langsung dengan --library-path, tanpa patchelf.
+# termux-exec menaruh LD_PRELOAD bionic yang gagal di-relocate loader
+# musl (__errno, __register_atfork, ...) — buang dulu sebelum exec.
+unset LD_PRELOAD
+unset LD_LIBRARY_PATH
 exec /data/data/com.termux/files/usr/lib/opencode/ld-musl-aarch64.so.1 \
   --library-path /data/data/com.termux/files/usr/lib/opencode \
   /data/data/com.termux/files/usr/lib/opencode/opencode "$@"

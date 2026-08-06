@@ -87,6 +87,7 @@ release terbaru repo ini).
 | DNS gagal / `ETIMEOUT` | Kemungkinan kecil: musl me-parse `resolv.conf` sendiri, tidak lewat NSS glibc. Kalau terjadi, cek `cat /etc/resolv.conf` |
 | `sha256 mismatch` | Download korup. Hapus `~/.cache/opencode-termux` lalu jalankan ulang |
 | `not found: libstdc++.so.6` | Instalasi lama. Hapus `$PREFIX/lib/opencode` lalu `sh install.sh` lagi |
+| `Error relocating ... libtermux-exec-ld-preload.so: symbol not found` | `LD_PRELOAD` bionic dari `termux-exec` mengganggu loader musl. Update launcher: jalankan `git pull` lalu `sh install.sh` lagi (versi baru otomatis mengosongkan `LD_PRELOAD`) |
 | Layar TUI berantakan | `export TERM=xterm-256color` sebelum `opencode` |
 
 ## Cara Kerja
