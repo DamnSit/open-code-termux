@@ -76,8 +76,14 @@ opencode
 sh install.sh
 ```
 
-Untuk versi baru, ubah `VERSION=` di bagian atas `install.sh` (atau ikuti
-release terbaru repo ini).
+Installer rev 4 otomatis mendeteksi versi terbaru dari npm dan menginstalnya.
+
+> **PENTING:** jangan pakai `opencode upgrade` di Termux — metode deteksinya
+> tidak kenal instalasi ini, dan jalur `curl`-nya akan mengunduh build glibc
+> (`opencode-linux-arm64`) yang tidak bisa berjalan di Termux. `opencode update`
+> juga bukan command yang valid — opencode memperlakukan argumen itu sebagai
+> path direktori. Satu-satunya jalur update yang aman: `sh install.sh` (atau
+> pin versi manual: `VERSION=1.18.14 sh install.sh`).
 
 ## Troubleshooting
 

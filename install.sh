@@ -8,9 +8,8 @@
 # ============================================================
 set -e
 
-VERSION="1.18.14"
 EXPECTED_SHA256="118df79cf90d3362efb574ab119059083c536b430e1dc8017552cc8a0b0257d7"
-INSTALLER_REV="3"
+INSTALLER_REV="4"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 SRC="$(cd "$(dirname "$0")" && pwd)"
@@ -21,6 +20,19 @@ ARCH="$(uname -m)"
 [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || { echo "[!] butuh aarch64, punya: $ARCH"; exit 1; }
 
 mkdir -p "$DEST" "$PREFIX/bin" "$WORK"
+
+# ------------------------------------------------------------
+# 0. Versi: auto-detect terbaru dari npm, atau pin manual
+#    dengan: VERSION=1.18.14 sh install.sh
+# ------------------------------------------------------------
+if [ -z "${VERSION:-}" ]; then
+  VERSION="$(curl -s --fail https://registry.npmjs.org/opencode-linux-arm64-musl/latest \
+             | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')"
+  if [ -z "$VERSION" ]; then
+    echo "[!] gagal deteksi versi terbaru. Pin manual: VERSION=1.18.14 sh install.sh"
+    exit 1
+  fi
+fi
 echo "[*] installer rev $INSTALLER_REV — opencode $VERSION (musl aarch64) -> $DEST"
 
 # ------------------------------------------------------------
@@ -33,23 +45,44 @@ if [ -f "$SRC/opencode" ]; then
 else
   TGZ="$WORK/opencode-$VERSION.tgz"
   if [ ! -f "$TGZ" ]; then
-    echo "[*] unduh binary dari npm registry ..."
+    echo "[*] unduh binary $VERSION dari npm registry ..."
     curl -L --fail --retry 3 -o "$TGZ" \
       "https://registry.npmjs.org/opencode-linux-arm64-musl/-/opencode-linux-arm64-musl-$VERSION.tgz"
   fi
+
+  # versi non-pin: verifikasi tarball terhadap shasum npm
+  if [ "$VERSION" != "1.18.14" ]; then
+    NPM_SHA1="$(curl -s --fail "https://registry.npmjs.org/opencode-linux-arm64-musl/$VERSION" \
+                | sed -n 's/.*"shasum":"\([^"]*\)".*/\1/p')"
+    TGZ_SHA1="$(sha1sum "$TGZ" | awk '{print $1}')"
+    if [ "$NPM_SHA1" = "$TGZ_SHA1" ]; then
+      echo "[*] tarball sha1 cocok"
+    else
+      echo "[!] tarball sha1 mismatch: $TGZ_SHA1 (npm: $NPM_SHA1)"
+      exit 1
+    fi
+  fi
+
   rm -rf "$WORK/tgz"
   mkdir -p "$WORK/tgz"
   tar xzf "$TGZ" -C "$WORK/tgz"
   BIN_SRC="$WORK/tgz/package/bin/opencode"
 fi
 
-echo "[*] verifikasi sha256 ..."
-ACTUAL="$(sha256sum "$BIN_SRC" | awk '{print $1}')"
-if [ "$ACTUAL" != "$EXPECTED_SHA256" ]; then
-  echo "[!] sha256 tidak cocok: $ACTUAL"
-  echo "    expected: $EXPECTED_SHA256"
-  echo "    (timpa dengan SKIP_CHECK=1 sh install.sh kalau kamu yakin)"
-  [ -n "$SKIP_CHECK" ] || exit 1
+# verifikasi: sha256 (hanya untuk 1.18.14 yang diuji manual) + cek ELF aarch64
+if [ "$VERSION" = "1.18.14" ]; then
+  echo "[*] verifikasi sha256 ..."
+  ACTUAL="$(sha256sum "$BIN_SRC" | awk '{print $1}')"
+  if [ "$ACTUAL" != "$EXPECTED_SHA256" ]; then
+    echo "[!] sha256 tidak cocok: $ACTUAL"
+    echo "    expected: $EXPECTED_SHA256"
+    echo "    (timpa dengan SKIP_CHECK=1 sh install.sh kalau kamu yakin)"
+    [ -n "$SKIP_CHECK" ] || exit 1
+  fi
+fi
+if ! od -An -tx1 -N4 "$BIN_SRC" | grep -q '7f 45 4c 46'; then
+  echo "[!] binary bukan ELF — salah unduh?"
+  exit 1
 fi
 
 # ------------------------------------------------------------
@@ -110,7 +143,7 @@ chmod 755 "$PREFIX/bin/opencode"
 
 # cek launcher benar-benar terpasang dengan fix LD_PRELOAD
 if ! grep -q 'unset LD_PRELOAD' "$PREFIX/bin/opencode"; then
-  echo "[!] launcher gagal ditulis (versi install.sh lama?) — cari 'rev 3' di output"
+  echo "[!] launcher gagal ditulis (versi install.sh lama?) — cari 'rev 4' di output"
   exit 1
 fi
 
@@ -119,7 +152,8 @@ fi
 # ------------------------------------------------------------
 echo "[*] verifikasi:"
 if "$PREFIX/bin/opencode" --version; then
-  echo "[*] selesai. Jalankan: opencode"
+  echo "[*] selesai. opencode $VERSION terpasang. Jalankan: opencode"
+  echo "    (update berikutnya cukup: sh install.sh — tanpa 'opencode upgrade')"
 else
   echo "[!] gagal. Coba: BUN_JSC_useJIT=0 opencode"
 fi
