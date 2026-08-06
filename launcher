@@ -1,0 +1,8 @@
+#!/data/data/com.termux/files/usr/bin/sh
+# opencode launcher for Termux (Android, aarch64)
+# The musl build of opencode needs /lib/ld-musl-aarch64.so.1 which does not
+# exist on Termux (bionic libc). We ship the musl loader + libs in this dir
+# and invoke the loader directly with --library-path. No patchelf needed.
+exec /data/data/com.termux/files/usr/lib/opencode/ld-musl-aarch64.so.1 \
+  --library-path /data/data/com.termux/files/usr/lib/opencode \
+  /data/data/com.termux/files/usr/lib/opencode/opencode "$@"
