@@ -1,28 +1,28 @@
 # open-code-termux
 
-**opencode** — AI coding agent CLI — di **Termux** (Android, aarch64/arm64).
+**opencode** — AI coding agent CLI — on **Termux** (Android, aarch64/arm64).
 
-Binary resmi `opencode-linux-arm64-musl` di-link ke `/lib/ld-musl-aarch64.so.1`
-yang tidak ada di Termux (Termux pakai bionic libc). Repo ini mengemas ulang
-binary tersebut dengan **loader musl + library pendukung dari Alpine**, dan
-memanggil loader secara langsung dengan `--library-path` — **tanpa patchelf,
-tanpa root**.
+The official `opencode-linux-arm64-musl` binary is linked against
+`/lib/ld-musl-aarch64.so.1`, which does not exist on Termux (Termux uses
+bionic libc). This repo repackages the binary with the **musl loader +
+supporting libraries from Alpine** and invokes the loader directly with
+`--library-path` — **no patchelf, no root**.
 
-Ada **dua metode instalasi**:
+There are **two installation methods**:
 
-- **Metode A (musl, default)** — self-contained, tanpa paket tambahan.
+- **Method A (musl, default)** — self-contained, no extra packages.
   Update: `sh install.sh`.
-- **Metode B (glibc via glibc-runner)** — cara yang sama dengan
+- **Method B (glibc via glibc-runner)** — the same approach as
   [claude-code-termux](https://github.com/DamnSit/claude-code-termux).
-  Update: `opencode upgrade` berfungsi penuh.
+  Update: full `opencode upgrade` support.
 
-## Persyaratan
+## Requirements
 
-- Ponsel **aarch64 / arm64** (hampir semua HP modern). Cek: `uname -m`
-- Termux dari F-Droid / GitHub releases (versi terbaru)
-- Koneksi internet untuk metode online (~65 MB unduhan)
+- **aarch64 / arm64** device (almost all modern phones). Check: `uname -m`
+- Termux from F-Droid / GitHub releases (latest version)
+- Internet connection for the online method (~65 MB download)
 
-## Instalasi Metode A — Musl (online, default)
+## Installation Method A — Musl (online, default)
 
 ```bash
 pkg update
@@ -31,7 +31,7 @@ curl -L -o install.sh https://raw.githubusercontent.com/DamnSit/open-code-termux
 sh install.sh
 ```
 
-Atau lewat git:
+Or via git:
 
 ```bash
 pkg update
@@ -41,17 +41,17 @@ cd open-code-termux
 sh install.sh
 ```
 
-Script akan mengunduh:
-- `opencode` 1.18.14 (musl aarch64) dari npm registry, diverifikasi dengan SHA-256
-- `ld-musl-aarch64.so.1` + `libstdc++.so.6` + `libgcc_s.so.1` dari Alpine CDN
+The script downloads:
+- `opencode` 1.18.14 (musl aarch64) from the npm registry, verified with SHA-256
+- `ld-musl-aarch64.so.1` + `libstdc++.so.6` + `libgcc_s.so.1` from the Alpine CDN
 
-Lalu memasang semuanya ke `$PREFIX/lib/opencode/` dan membuat launcher
-`$PREFIX/bin/opencode`.
+Then installs everything into `$PREFIX/lib/opencode/` and creates the
+`$PREFIX/bin/opencode` launcher.
 
-## Instalasi Metode B — Glibc via glibc-runner (opsional)
+## Installation Method B — Glibc via glibc-runner (optional)
 
-Cara yang sama dengan claude-code-termux: binary resmi build **glibc**
-dijalankan dengan **`grun`** (glibc-runner, `$PREFIX/glibc`).
+The same approach as claude-code-termux: the official **glibc** build is run
+with **`grun`** (glibc-runner, `$PREFIX/glibc`).
 
 ```bash
 pkg update
@@ -60,23 +60,23 @@ curl -L -o install-grun.sh https://raw.githubusercontent.com/DamnSit/open-code-t
 sh install-grun.sh
 ```
 
-Script akan:
-- memasang `glibc-repo` + `glibc-runner` lewat `pkg` (kalau belum ada)
-- mengunduh `opencode-linux-arm64` (build glibc) dari npm, diverifikasi sha1
-- memasang binary ke `~/.opencode/bin/opencode` + launcher `$PREFIX/bin/opencode`
-- menghapus instalasi musl lama otomatis
+The script will:
+- install `glibc-repo` + `glibc-runner` via `pkg` (if not already present)
+- download `opencode-linux-arm64` (glibc build) from npm, verified against the registry sha1
+- install the binary to `~/.opencode/bin/opencode` + launcher `$PREFIX/bin/opencode`
+- automatically remove any previous musl install
 
-Pilih metode ini kalau ingin **`opencode upgrade`** berfungsi penuh.
-Trade-off: paket glibc tambahan (±300 MB).
+Pick this method if you want **`opencode upgrade`** to work natively.
+Trade-off: additional glibc packages (±300 MB).
 
-## Instalasi (Offline / Tanpa Internet)
+## Installation (Offline / No Internet)
 
-1. Di PC, buat paket offline: salin `opencode`, `ld-musl-aarch64.so.1`,
-   `libstdc++.so.6`, `libgcc_s.so.1`, dan `install.sh` ke satu folder.
-   (Folder `bundle/` + binary dari npm tarball, atau paket zip yang sudah
-   dirakit di PC.)
-2. Transfer ke HP (USB / Google Drive / `adb push`).
-3. Di Termux:
+1. On a PC, build the offline bundle: copy `opencode`, `ld-musl-aarch64.so.1`,
+   `libstdc++.so.6`, `libgcc_s.so.1`, and `install.sh` into one folder.
+   (The `bundle/` folder plus the binary from the npm tarball, or the zip
+   already assembled on the PC.)
+2. Transfer to the phone (USB / Google Drive / `adb push`).
+3. In Termux:
 
 ```bash
 pkg install -y curl
@@ -86,87 +86,87 @@ cd opencode-termux
 sh install.sh
 ```
 
-Script otomatis mendeteksi file lokal dan melewati unduhan.
+The script automatically detects the local files and skips the downloads.
 
-## Cara Pakai
+## Usage
 
 ```bash
 opencode
 ```
 
-- Login pertama kali: pilih provider (Anthropic, OpenAI, dll.) dan masukkan
-  API key, atau pakai mode lokal.
-- Semua konfigurasi tersimpan di `~/.local/share/opencode/` dan
+- First login: pick a provider (Anthropic, OpenAI, etc.) and enter your API
+  key, or use local mode.
+- All configuration is stored in `~/.local/share/opencode/` and
   `~/.config/opencode/`.
 
 ## Update
 
-**Metode A (musl):**
+**Method A (musl):**
 
 ```bash
 sh install.sh
 ```
 
-Installer rev 4 otomatis mendeteksi versi terbaru dari npm dan menginstalnya.
+Installer rev 4 automatically detects the latest version from npm and installs it.
 
-> **PENTING (musl):** jangan pakai `opencode upgrade` di instalasi musl —
-> jalur `curl`-nya mengunduh build glibc (`opencode-linux-arm64`) yang tidak
-> bisa berjalan. `opencode update` juga bukan command yang valid — opencode
-> memperlakukan argumen itu sebagai path direktori. Satu-satunya jalur update
-> yang aman: `sh install.sh` (atau pin versi manual:
-> `VERSION=1.18.14 sh install.sh`).
+> **IMPORTANT (musl):** do NOT use `opencode upgrade` on a musl install —
+> its `curl` path downloads the glibc build (`opencode-linux-arm64`), which
+> cannot run. `opencode update` is also not a valid command — opencode treats
+> the argument as a directory path. The only safe update path: `sh install.sh`
+> (or pin the version manually: `VERSION=1.18.14 sh install.sh`).
 
-**Metode B (glibc/grun):**
+**Method B (glibc/grun):**
 
 ```bash
 opencode upgrade
 ```
 
-Karena binary berada di `~/.opencode/bin/opencode`, opencode mengenali
-instalasinya sebagai metode `curl` dan mengganti binary-nya sendiri.
-Baris verifikasi terakhir upgrade bisa melapor gagal (opencode mengeksekusi
-binary tanpa `grun`) padahal binary sudah terganti — cek `opencode --version`.
-Alternatif: `sh install-grun.sh` (auto-detect versi terbaru dari npm).
+Because the binary lives at `~/.opencode/bin/opencode`, opencode recognizes
+the install as a `curl`-method install and replaces its own binary.
+The final verification step of the upgrade may report failure (opencode
+executes the binary without `grun`) even though the binary was already
+replaced — check with `opencode --version`.
+Alternative: `sh install-grun.sh` (auto-detects the latest version from npm).
 
 ## Troubleshooting
 
-| Gejala | Solusi |
+| Symptom | Fix |
 |---|---|
-| `--version` jalan tapi hang saat start | `BUN_JSC_useJIT=0 opencode` (JIT dibatasi SELinux Android) |
-| DNS gagal / `ETIMEOUT` | Kemungkinan kecil: musl me-parse `resolv.conf` sendiri, tidak lewat NSS glibc. Kalau terjadi, cek `cat /etc/resolv.conf` |
-| `sha256 mismatch` | Download korup. Hapus `~/.cache/opencode-termux` lalu jalankan ulang |
-| `not found: libstdc++.so.6` | Instalasi lama. Hapus `$PREFIX/lib/opencode` lalu `sh install.sh` lagi |
-| `Error relocating ... libtermux-exec-ld-preload.so: symbol not found` | `LD_PRELOAD` bionic dari `termux-exec` mengganggu loader musl. Update launcher: jalankan `git pull` lalu `sh install.sh` lagi (versi baru otomatis mengosongkan `LD_PRELOAD`) |
-| Output installer tidak menampilkan `rev 3` | Installer yang diunduh masih versi lama (cache CDN raw GitHub). Unduh ulang atau pakai URL commit: `curl -L -o install.sh https://raw.githubusercontent.com/DamnSit/open-code-termux/main/install.sh?x=$(date +%s)` |
-| Layar TUI berantakan | `export TERM=xterm-256color` sebelum `opencode` |
-| Metode B: `command not found: grun` | `pkg install glibc-repo -y && pkg update && pkg install glibc-runner -y` |
-| Metode B: `opencode upgrade` melapor gagal tapi versi tidak berubah | Jalankan ulang `opencode upgrade`, atau `sh install-grun.sh` (auto-detect npm) |
-| Metode B: binary glibc gagal jalan langsung | Itu normal — binary glibc butuh loader glibc (`$PREFIX/glibc`); selalu jalankan lewat launcher `opencode` |
+| `--version` works but hangs on start | `BUN_JSC_useJIT=0 opencode` (JIT is restricted by Android SELinux) |
+| DNS failures / `ETIMEOUT` | Unlikely: musl parses `resolv.conf` itself, not via glibc NSS. If it happens, check `cat /etc/resolv.conf` |
+| `sha256 mismatch` | Corrupted download. Delete `~/.cache/opencode-termux` and re-run |
+| `not found: libstdc++.so.6` | Old install. Delete `$PREFIX/lib/opencode` and run `sh install.sh` again |
+| `Error relocating ... libtermux-exec-ld-preload.so: symbol not found` | The bionic `LD_PRELOAD` from `termux-exec` interferes with the musl loader. Update the launcher: run `git pull` then `sh install.sh` again (new versions clear `LD_PRELOAD` automatically) |
+| Installer output does not show `rev 3` | Downloaded installer is an old cached version (GitHub raw CDN cache). Re-download or use a commit URL: `curl -L -o install.sh https://raw.githubusercontent.com/DamnSit/open-code-termux/main/install.sh?x=$(date +%s)` |
+| Messy TUI screen | `export TERM=xterm-256color` before `opencode` |
+| Method B: `command not found: grun` | `pkg install glibc-repo -y && pkg update && pkg install glibc-runner -y` |
+| Method B: `opencode upgrade` reports failure but version stays the same | Run `opencode upgrade` again, or `sh install-grun.sh` (npm auto-detect) |
+| Method B: glibc binary fails when run directly | Normal — the glibc binary needs the glibc loader (`$PREFIX/glibc`); always run via the `opencode` launcher |
 
-## Cara Kerja
+## How It Works
 
 ```
 opencode (ELF aarch64, musl)
-  interp: /lib/ld-musl-aarch64.so.1        <- tidak ada di Termux
+  interp: /lib/ld-musl-aarch64.so.1        <- not present on Termux
   NEEDED: libstdc++.so.6, libc.musl-aarch64.so.1, libgcc_s.so.1
 
-Solusi:
+Solution:
   ld-musl-aarch64.so.1 --library-path $PREFIX/lib/opencode \
     $PREFIX/lib/opencode/opencode "$@"
 ```
 
-- Loader musl dipanggil langsung sebagai executable — tidak perlu menulis ulang
-  `PT_INTERP` (patchelf opsional, hanya untuk meluncurkan tanpa awalan loader).
-- `libc.musl-aarch64.so.1` adalah loader itu sendiri dengan nama libc-nya.
-- Bonus: `getaddrinfo` musl me-parse `resolv.conf` sendiri, jadi bug DNS
-  yang pernah memakan claude-code di Termux umumnya tidak terjadi di sini.
+- The musl loader is invoked directly as an executable — no need to rewrite
+  `PT_INTERP` (patchelf is optional, only to launch without the loader prefix).
+- `libc.musl-aarch64.so.1` is the loader itself under its libc name.
+- Bonus: musl `getaddrinfo` parses `resolv.conf` on its own, so the DNS bug
+  that once hit claude-code on Termux generally does not happen here.
 
-## File
+## Files
 
-| File | Keterangan |
+| File | Description |
 |---|---|
-| `install.sh` | Installer Metode A — musl, dual-mode (online/offline), verifikasi SHA-256 |
-| `install-grun.sh` | Installer Metode B — binary glibc resmi + glibc-runner (cara claude-code-termux), `opencode upgrade` berfungsi |
-| `uninstall-grun.sh` | Menghapus launcher + binary glibc/grun |
-| `launcher` | Wrapper yang memanggil loader musl (dipakai instalasi offline) |
-| `opencode` | Binary 1.18.14 musl aarch64 — TIDAK di-repo (file > 100MB), diunduh script |
+| `install.sh` | Method A installer — musl, dual-mode (online/offline), SHA-256 verification |
+| `install-grun.sh` | Method B installer — official glibc build + glibc-runner (claude-code-termux style), full `opencode upgrade` support |
+| `uninstall-grun.sh` | Removes the launcher + glibc/grun binary |
+| `launcher` | Wrapper that invokes the musl loader (used by offline installs) |
+| `opencode` | 1.18.14 musl aarch64 binary — NOT in the repo (>100MB file, downloaded by the script) |
