@@ -4,7 +4,8 @@
 # Masalah: opencode mengaktifkan mouse capture di TUI, jadi tap
 # layar dikirim sebagai event mouse dan Termux tidak membuka
 # keyboard. Script ini:
-#   1. Matikan mouse capture opencode (tap layar = buka keyboard lagi)
+#   1. Matikan mouse capture TUI (tui.json: "mouse": false) dan
+#      bersihkan key enable_mouse_capture yang salah di config.json
 #   2. Tambah tombol KEYBOARD di extra keys row Termux
 #   3. Auto-show keyboard tiap opencode start (via termux-api)
 # Idempotent — aman dijalankan berulang.
@@ -12,17 +13,19 @@
 set -e
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
-PROPS="$HOME/.termux/termux.properties"
 CONFIG="$HOME/.config/opencode/config.json"
+TUI="$HOME/.config/opencode/tui.json"
+PROPS="$HOME/.termux/termux.properties"
 LAUNCHER="$PREFIX/bin/opencode"
 
-echo "[*] patch keyboard opencode"
+echo "[*] patch keyboard opencode (rev 2)"
 
 # ------------------------------------------------------------
-# 1. enable_mouse_capture: false di config opencode
+# 1. Bersihkan key lama yang salah + matikan mouse capture TUI
 # ------------------------------------------------------------
-mkdir -p "$(dirname "$CONFIG")"
-if ! grep -q '"enable_mouse_capture"' "$CONFIG" 2>/dev/null; then
+mkdir -p "$(dirname "$CONFIG")" "$(dirname "$TUI")"
+
+if grep -q '"enable_mouse_capture"' "$CONFIG" 2>/dev/null; then
   if command -v python3 >/dev/null 2>&1; then
     python3 - "$CONFIG" <<'EOF'
 import json, sys
@@ -30,24 +33,46 @@ p = sys.argv[1]
 try:
     with open(p) as f:
         cfg = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
+except json.JSONDecodeError:
     cfg = {}
-cfg["enable_mouse_capture"] = False
+cfg.pop("enable_mouse_capture", None)
 with open(p, "w") as f:
     json.dump(cfg, f, indent=2)
     f.write("\n")
-print("config ditulis:", p)
 EOF
-  elif [ ! -s "$CONFIG" ]; then
-    echo '{"enable_mouse_capture": false}' > "$CONFIG"
-    echo "[*] config baru ditulis: $CONFIG"
+    echo "[*] key enable_mouse_capture dihapus dari config.json"
+  elif [ "$(grep -o '"[a-z_]*":' "$CONFIG" | wc -l)" -le 1 ]; then
+    echo '{}' > "$CONFIG"
+    echo "[*] config.json direset (hanya berisi key yang salah)"
   else
-    echo "[!] config sudah berisi data dan python3 tidak tersedia."
-    echo "    Tambah manual: \"enable_mouse_capture\": false di $CONFIG"
-    echo "    atau: pkg install -y python"
+    echo "[!] hapus manual: enable_mouse_capture di $CONFIG (atau: pkg install -y python)"
+  fi
+fi
+
+if [ ! -f "$TUI" ]; then
+  echo '{"mouse": false}' > "$TUI"
+  echo "[*] tui.json dibuat dengan mouse off"
+elif ! grep -q '"mouse"' "$TUI"; then
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$TUI" <<'EOF'
+import json, sys
+p = sys.argv[1]
+try:
+    with open(p) as f:
+        t = json.load(f)
+except json.JSONDecodeError:
+    t = {}
+t["mouse"] = False
+with open(p, "w") as f:
+    json.dump(t, f, indent=2)
+    f.write("\n")
+EOF
+    echo "[*] mouse off ditambahkan ke tui.json"
+  else
+    echo "[!] tambah manual: \"mouse\": false di $TUI (atau: pkg install -y python)"
   fi
 else
-  echo "[*] enable_mouse_capture sudah diatur di config"
+  echo "[*] mouse sudah diatur di tui.json"
 fi
 
 # ------------------------------------------------------------

@@ -7,7 +7,7 @@
 # ============================================================
 set -e
 
-INSTALLER_REV="2"
+INSTALLER_REV="3"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 WORK="$HOME/.cache/opencode-grun"
@@ -108,16 +108,18 @@ if ! grep -q 'unset LD_PRELOAD' "$PREFIX/bin/opencode"; then
 fi
 
 # ------------------------------------------------------------
-# 4. Patch keyboard HP: mouse capture opencode dimatikan (tap
-#    layar = buka keyboard lagi), tombol KEYBOARD di extra keys
-#    row Termux, dan auto-show keyboard tiap start (termux-api).
+# 4. Patch keyboard HP: mouse capture TUI dimatikan (tap layar =
+#    buka keyboard lagi), tombol KEYBOARD di extra keys row
+#    Termux, dan auto-show keyboard tiap start (termux-api).
 #    Semua idempotent — aman dijalankan berulang.
+#    Catatan: setting mouse TUI ada di tui.json ("mouse": false),
+#    bukan di config.json.
 # ------------------------------------------------------------
-PROPS="$HOME/.termux/termux.properties"
 CONFIG="$HOME/.config/opencode/config.json"
+TUI="$HOME/.config/opencode/tui.json"
 
-mkdir -p "$(dirname "$CONFIG")"
-if ! grep -q '"enable_mouse_capture"' "$CONFIG" 2>/dev/null; then
+# 4a. bersihkan key lama yang salah (enable_mouse_capture di config.json)
+if grep -q '"enable_mouse_capture"' "$CONFIG" 2>/dev/null; then
   if command -v python3 >/dev/null 2>&1; then
     python3 - "$CONFIG" <<'EOF'
 import json, sys
@@ -125,18 +127,52 @@ p = sys.argv[1]
 try:
     with open(p) as f:
         cfg = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
+except json.JSONDecodeError:
     cfg = {}
-cfg["enable_mouse_capture"] = False
+cfg.pop("enable_mouse_capture", None)
 with open(p, "w") as f:
     json.dump(cfg, f, indent=2)
     f.write("\n")
 EOF
-  elif [ ! -s "$CONFIG" ]; then
-    echo '{"enable_mouse_capture": false}' > "$CONFIG"
+    echo "[*] key enable_mouse_capture dihapus dari config.json"
+  elif [ "$(grep -o '"[a-z_]*":' "$CONFIG" | wc -l)" -le 1 ]; then
+    echo '{}' > "$CONFIG"
+    echo "[*] config.json direset (hanya berisi key yang salah)"
+  else
+    echo "[!] hapus manual: enable_mouse_capture di $CONFIG (atau: pkg install -y python)"
   fi
 fi
 
+# 4b. tui.json: matikan mouse capture
+mkdir -p "$(dirname "$TUI")"
+if [ ! -f "$TUI" ]; then
+  echo '{"mouse": false}' > "$TUI"
+  echo "[*] tui.json dibuat dengan mouse off"
+elif ! grep -q '"mouse"' "$TUI"; then
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$TUI" <<'EOF'
+import json, sys
+p = sys.argv[1]
+try:
+    with open(p) as f:
+        t = json.load(f)
+except json.JSONDecodeError:
+    t = {}
+t["mouse"] = False
+with open(p, "w") as f:
+    json.dump(t, f, indent=2)
+    f.write("\n")
+EOF
+    echo "[*] mouse off ditambahkan ke tui.json"
+  else
+    echo "[!] tambah manual: \"mouse\": false di $TUI (atau: pkg install -y python)"
+  fi
+else
+  echo "[*] mouse sudah diatur di tui.json"
+fi
+
+# 4c. KEYBOARD extra key
+PROPS="$HOME/.termux/termux.properties"
 mkdir -p "$(dirname "$PROPS")"
 touch "$PROPS"
 if grep -q '^extra-keys' "$PROPS" && ! grep '^extra-keys' "$PROPS" | grep -q 'KEYBOARD'; then
@@ -145,6 +181,7 @@ elif ! grep -q '^extra-keys' "$PROPS"; then
   printf 'extra-keys = [ESC TAB CTRL ALT KEYBOARD]\n' >> "$PROPS"
 fi
 
+# 4d. auto-show keyboard via termux-api
 if ! command -v termux-keyboard-show >/dev/null 2>&1; then
   pkg install -y termux-api >/dev/null 2>&1 || echo "[!] termux-api gagal dipasang (offline?) — auto-show keyboard dilewati"
 fi
@@ -152,7 +189,7 @@ if [ -f "$PREFIX/bin/opencode" ] && ! grep -q 'termux-keyboard-show' "$PREFIX/bi
   sed -i '/^unset LD_LIBRARY_PATH/a command -v termux-keyboard-show >/dev/null 2>\&1 \&\& termux-keyboard-show' "$PREFIX/bin/opencode"
 fi
 command -v termux-reload-settings >/dev/null 2>&1 && termux-reload-settings
-echo "[*] keyboard patch: mouse capture off + KEYBOARD key + auto-show"
+echo "[*] keyboard patch: mouse off (tui.json) + KEYBOARD key + auto-show"
 
 # ------------------------------------------------------------
 # 5. Verifikasi

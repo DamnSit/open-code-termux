@@ -110,7 +110,7 @@ opencode
 sh install.sh
 ```
 
-Installer rev 5 automatically detects the latest version from npm, installs it,
+Installer rev 6 automatically detects the latest version from npm, installs it,
 and applies the keyboard patch.
 
 > **IMPORTANT (musl):** do NOT use `opencode upgrade` on a musl install —
@@ -146,7 +146,7 @@ Alternative: `sh install-grun.sh` (auto-detects the latest version from npm).
 | Method B: `command not found: grun` | `pkg install glibc-repo -y && pkg update && pkg install glibc-runner -y` |
 | Method B: `opencode upgrade` reports failure but version stays the same | Run `opencode upgrade` again, or `sh install-grun.sh` (npm auto-detect) |
 | Method B: glibc binary fails when run directly | Normal — the glibc binary needs the glibc loader (`$PREFIX/glibc`); always run via the `opencode` launcher |
-| Phone keyboard does not open when tapping the screen in opencode | The TUI captures taps as mouse events. Reinstall to get the patch: `sh install.sh` (rev 5+ includes it), or for existing installs: `sh patch-keyboard.sh` (disables mouse capture, adds the KEYBOARD extra key, auto-shows the keyboard via termux-api) |
+| Phone keyboard does not open when tapping the screen in opencode | The TUI captures taps as mouse events. Reinstall to get the patch: `sh install.sh` (rev 6+ includes it), or for existing installs: `sh patch-keyboard.sh`. The fix sets `"mouse": false` in `~/.config/opencode/tui.json` (TUI mouse capture), adds the KEYBOARD extra key, and auto-shows the keyboard via termux-api. Note: the TUI mouse setting lives in `tui.json`, not `config.json` |
 
 ## How It Works
 
