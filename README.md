@@ -110,7 +110,7 @@ opencode
 sh install.sh
 ```
 
-Installer rev 6 automatically detects the latest version from npm, installs it,
+Installer rev 7 automatically detects the latest version from npm, installs it,
 and applies the keyboard patch.
 
 > **IMPORTANT (musl):** do NOT use `opencode upgrade` on a musl install —
@@ -137,7 +137,7 @@ Alternative: `sh install-grun.sh` (auto-detects the latest version from npm).
 | Symptom | Fix |
 |---|---|
 | `--version` works but hangs on start | `BUN_JSC_useJIT=0 opencode` (JIT is restricted by Android SELinux) |
-| DNS failures / `ETIMEOUT` | Unlikely: musl parses `resolv.conf` itself, not via glibc NSS. If it happens, check `cat /etc/resolv.conf` |
+| DNS failures / `ETIMEOUT` / `Cannot connect to API` | opencode (musl/glibc) parses `/etc/resolv.conf` itself, not the Android resolver. If the file is missing or only lists localhost, all API connections fail. Fix: `printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' > $PREFIX/etc/resolv.conf` (installer rev 7+ does this automatically) |
 | `sha256 mismatch` | Corrupted download. Delete `~/.cache/opencode-termux` and re-run |
 | `not found: libstdc++.so.6` | Old install. Delete `$PREFIX/lib/opencode` and run `sh install.sh` again |
 | `Error relocating ... libtermux-exec-ld-preload.so: symbol not found` | The bionic `LD_PRELOAD` from `termux-exec` interferes with the musl loader. Update the launcher: run `git pull` then `sh install.sh` again (new versions clear `LD_PRELOAD` automatically) |

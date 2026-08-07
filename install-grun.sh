@@ -7,7 +7,7 @@
 # ============================================================
 set -e
 
-INSTALLER_REV="3"
+INSTALLER_REV="4"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 WORK="$HOME/.cache/opencode-grun"
@@ -190,6 +190,17 @@ if [ -f "$PREFIX/bin/opencode" ] && ! grep -q 'termux-keyboard-show' "$PREFIX/bi
 fi
 command -v termux-reload-settings >/dev/null 2>&1 && termux-reload-settings
 echo "[*] keyboard patch: mouse off (tui.json) + KEYBOARD key + auto-show"
+
+# 4e. DNS fix: binary opencode (glibc/bun) me-parse /etc/resolv.conf
+#     sendiri. Kalau file tidak ada / kosong / hanya localhost,
+#     semua koneksi API gagal ("Cannot connect to API").
+RESOLV="$PREFIX/etc/resolv.conf"
+if [ ! -s "$RESOLV" ] || grep -qE '^\s*nameserver\s+(127\.0\.0\.1|::1|localhost)\s*$' "$RESOLV" 2>/dev/null; then
+  printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' > "$RESOLV"
+  echo "[*] DNS fix: $RESOLV ditulis (8.8.8.8 / 1.1.1.1)"
+else
+  echo "[*] DNS ok: $RESOLV sudah ada"
+fi
 
 # ------------------------------------------------------------
 # 5. Verifikasi
