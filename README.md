@@ -142,6 +142,7 @@ Alternative: `sh install-grun.sh` (auto-detects the latest version from npm).
 | Method B: `command not found: grun` | `pkg install glibc-repo -y && pkg update && pkg install glibc-runner -y` |
 | Method B: `opencode upgrade` reports failure but version stays the same | Run `opencode upgrade` again, or `sh install-grun.sh` (npm auto-detect) |
 | Method B: glibc binary fails when run directly | Normal — the glibc binary needs the glibc loader (`$PREFIX/glibc`); always run via the `opencode` launcher |
+| Phone keyboard does not open when tapping the screen in opencode | The TUI captures taps as mouse events. Run `sh patch-keyboard.sh` (disables mouse capture, adds the KEYBOARD extra key, auto-shows the keyboard via termux-api) |
 
 ## How It Works
 
@@ -168,5 +169,6 @@ Solution:
 | `install.sh` | Method A installer — musl, dual-mode (online/offline), SHA-256 verification |
 | `install-grun.sh` | Method B installer — official glibc build + glibc-runner (claude-code-termux style), full `opencode upgrade` support |
 | `uninstall-grun.sh` | Removes the launcher + glibc/grun binary |
+| `patch-keyboard.sh` | Fixes the on-screen keyboard not opening in opencode (mouse capture off, KEYBOARD extra key, auto-show via termux-api) |
 | `launcher` | Wrapper that invokes the musl loader (used by offline installs) |
 | `opencode` | 1.18.14 musl aarch64 binary — NOT in the repo (>100MB file, downloaded by the script) |
