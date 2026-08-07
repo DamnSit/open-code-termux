@@ -45,8 +45,10 @@ The script downloads:
 - `opencode` 1.18.14 (musl aarch64) from the npm registry, verified with SHA-256
 - `ld-musl-aarch64.so.1` + `libstdc++.so.6` + `libgcc_s.so.1` from the Alpine CDN
 
-Then installs everything into `$PREFIX/lib/opencode/` and creates the
-`$PREFIX/bin/opencode` launcher.
+Then installs everything into `$PREFIX/lib/opencode/`, creates the
+`$PREFIX/bin/opencode` launcher, and applies the **keyboard patch**
+(mouse capture off so taps reopen the phone keyboard, KEYBOARD extra key,
+auto-show via termux-api).
 
 ## Installation Method B — Glibc via glibc-runner (optional)
 
@@ -65,6 +67,7 @@ The script will:
 - download `opencode-linux-arm64` (glibc build) from npm, verified against the registry sha1
 - install the binary to `~/.opencode/bin/opencode` + launcher `$PREFIX/bin/opencode`
 - automatically remove any previous musl install
+- apply the **keyboard patch** (mouse capture off, KEYBOARD extra key, auto-show via termux-api)
 
 Pick this method if you want **`opencode upgrade`** to work natively.
 Trade-off: additional glibc packages (±300 MB).
@@ -107,7 +110,8 @@ opencode
 sh install.sh
 ```
 
-Installer rev 4 automatically detects the latest version from npm and installs it.
+Installer rev 5 automatically detects the latest version from npm, installs it,
+and applies the keyboard patch.
 
 > **IMPORTANT (musl):** do NOT use `opencode upgrade` on a musl install —
 > its `curl` path downloads the glibc build (`opencode-linux-arm64`), which
@@ -142,7 +146,7 @@ Alternative: `sh install-grun.sh` (auto-detects the latest version from npm).
 | Method B: `command not found: grun` | `pkg install glibc-repo -y && pkg update && pkg install glibc-runner -y` |
 | Method B: `opencode upgrade` reports failure but version stays the same | Run `opencode upgrade` again, or `sh install-grun.sh` (npm auto-detect) |
 | Method B: glibc binary fails when run directly | Normal — the glibc binary needs the glibc loader (`$PREFIX/glibc`); always run via the `opencode` launcher |
-| Phone keyboard does not open when tapping the screen in opencode | The TUI captures taps as mouse events. Run `sh patch-keyboard.sh` (disables mouse capture, adds the KEYBOARD extra key, auto-shows the keyboard via termux-api) |
+| Phone keyboard does not open when tapping the screen in opencode | The TUI captures taps as mouse events. Reinstall to get the patch: `sh install.sh` (rev 5+ includes it), or for existing installs: `sh patch-keyboard.sh` (disables mouse capture, adds the KEYBOARD extra key, auto-shows the keyboard via termux-api) |
 
 ## How It Works
 

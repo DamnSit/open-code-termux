@@ -9,7 +9,7 @@
 set -e
 
 EXPECTED_SHA256="118df79cf90d3362efb574ab119059083c536b430e1dc8017552cc8a0b0257d7"
-INSTALLER_REV="4"
+INSTALLER_REV="5"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 SRC="$(cd "$(dirname "$0")" && pwd)"
@@ -148,7 +148,54 @@ if ! grep -q 'unset LD_PRELOAD' "$PREFIX/bin/opencode"; then
 fi
 
 # ------------------------------------------------------------
-# 4. Verifikasi
+# 4. Patch keyboard HP: mouse capture opencode dimatikan (tap
+#    layar = buka keyboard lagi), tombol KEYBOARD di extra keys
+#    row Termux, dan auto-show keyboard tiap start (termux-api).
+#    Semua idempotent — aman dijalankan berulang.
+# ------------------------------------------------------------
+PROPS="$HOME/.termux/termux.properties"
+CONFIG="$HOME/.config/opencode/config.json"
+
+mkdir -p "$(dirname "$CONFIG")"
+if ! grep -q '"enable_mouse_capture"' "$CONFIG" 2>/dev/null; then
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$CONFIG" <<'EOF'
+import json, sys
+p = sys.argv[1]
+try:
+    with open(p) as f:
+        cfg = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    cfg = {}
+cfg["enable_mouse_capture"] = False
+with open(p, "w") as f:
+    json.dump(cfg, f, indent=2)
+    f.write("\n")
+EOF
+  elif [ ! -s "$CONFIG" ]; then
+    echo '{"enable_mouse_capture": false}' > "$CONFIG"
+  fi
+fi
+
+mkdir -p "$(dirname "$PROPS")"
+touch "$PROPS"
+if grep -q '^extra-keys' "$PROPS" && ! grep '^extra-keys' "$PROPS" | grep -q 'KEYBOARD'; then
+  sed -i 's/^\(extra-keys = \[[^]]*\)\]$/\1 KEYBOARD]/' "$PROPS"
+elif ! grep -q '^extra-keys' "$PROPS"; then
+  printf 'extra-keys = [ESC TAB CTRL ALT KEYBOARD]\n' >> "$PROPS"
+fi
+
+if ! command -v termux-keyboard-show >/dev/null 2>&1; then
+  pkg install -y termux-api >/dev/null 2>&1 || echo "[!] termux-api gagal dipasang (offline?) — auto-show keyboard dilewati"
+fi
+if [ -f "$PREFIX/bin/opencode" ] && ! grep -q 'termux-keyboard-show' "$PREFIX/bin/opencode"; then
+  sed -i '/^unset LD_LIBRARY_PATH/a command -v termux-keyboard-show >/dev/null 2>\&1 \&\& termux-keyboard-show' "$PREFIX/bin/opencode"
+fi
+command -v termux-reload-settings >/dev/null 2>&1 && termux-reload-settings
+echo "[*] keyboard patch: mouse capture off + KEYBOARD key + auto-show"
+
+# ------------------------------------------------------------
+# 5. Verifikasi
 # ------------------------------------------------------------
 echo "[*] verifikasi:"
 if "$PREFIX/bin/opencode" --version; then
