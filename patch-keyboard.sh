@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/sh
 # ============================================================
 # patch-keyboard.sh — perbaikan keyboard HP di opencode (Termux)
-# Masalah: opencode mengaktifkan mouse capture di TUI, jadi tap
-# layar dikirim sebagai event mouse dan Termux tidak membuka
-# keyboard. Script ini:
-#   1. Matikan mouse capture TUI (tui.json: "mouse": false) dan
-#      bersihkan key enable_mouse_capture yang salah di config.json
-#   2. Tambah tombol KEYBOARD di extra keys row Termux
+# Masalah: mouse capture TUI yang MATI membuat tap layar membuka
+# keyboard, tapi tombol-tombol TUI (klik, kayak di Windows) ikut
+# mati. Pendekatan sekarang:
+#   1. MOUSE TETAP AKTIF — tombol TUI bisa diklik (tap = klik).
+#      Kalau ada tui.json berisi mouse:false dari patch lama,
+#      dibuang, plus bersihkan key enable_mouse_capture yang
+#      salah di config.json
+#   2. Keyboard dipanggil lewat tombol KEYBOARD di extra keys row
 #   3. Auto-show keyboard tiap opencode start (via termux-api)
 # Idempotent — aman dijalankan berulang.
 # ============================================================
@@ -18,12 +20,12 @@ TUI="$HOME/.config/opencode/tui.json"
 PROPS="$HOME/.termux/termux.properties"
 LAUNCHER="$PREFIX/bin/opencode"
 
-echo "[*] patch keyboard opencode (rev 2)"
+echo "[*] patch keyboard opencode (rev 3)"
 
 # ------------------------------------------------------------
-# 1. Bersihkan key lama yang salah + matikan mouse capture TUI
+# 1. Bersihkan key lama yang salah + aktifkan kembali mouse TUI
 # ------------------------------------------------------------
-mkdir -p "$(dirname "$CONFIG")" "$(dirname "$TUI")"
+mkdir -p "$(dirname "$CONFIG")"
 
 if grep -q '"enable_mouse_capture"' "$CONFIG" 2>/dev/null; then
   if command -v python3 >/dev/null 2>&1; then
@@ -49,30 +51,9 @@ EOF
   fi
 fi
 
-if [ ! -f "$TUI" ]; then
-  echo '{"mouse": false}' > "$TUI"
-  echo "[*] tui.json dibuat dengan mouse off"
-elif ! grep -q '"mouse"' "$TUI"; then
-  if command -v python3 >/dev/null 2>&1; then
-    python3 - "$TUI" <<'EOF'
-import json, sys
-p = sys.argv[1]
-try:
-    with open(p) as f:
-        t = json.load(f)
-except json.JSONDecodeError:
-    t = {}
-t["mouse"] = False
-with open(p, "w") as f:
-    json.dump(t, f, indent=2)
-    f.write("\n")
-EOF
-    echo "[*] mouse off ditambahkan ke tui.json"
-  else
-    echo "[!] tambah manual: \"mouse\": false di $TUI (atau: pkg install -y python)"
-  fi
-else
-  echo "[*] mouse sudah diatur di tui.json"
+if [ -f "$TUI" ] && grep -q '"mouse"[[:space:]]*:[[:space:]]*false' "$TUI"; then
+  rm -f "$TUI"
+  echo "[*] mouse capture TUI diaktifkan kembali (tombol bisa diklik)"
 fi
 
 # ------------------------------------------------------------
@@ -108,4 +89,4 @@ fi
 # 4. Reload + selesai
 # ------------------------------------------------------------
 command -v termux-reload-settings >/dev/null 2>&1 && termux-reload-settings
-echo "[*] selesai. Restart opencode (atau Termux) lalu tes tap layar."
+echo "[*] selesai. Restart opencode. Tap layar = klik tombol; tombol KEYBOARD untuk mengetik."

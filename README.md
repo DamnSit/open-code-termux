@@ -37,7 +37,8 @@ The script will:
 - install `glibc-repo` + `glibc-runner` via `pkg` (if not already present)
 - download `opencode-linux-arm64` (glibc build) from npm, verified against the registry sha1
 - install the binary to `~/.opencode/bin/opencode` + launcher `$PREFIX/bin/opencode`
-- apply the **keyboard patch** (mouse capture off, KEYBOARD extra key, auto-show via termux-api)
+- apply the **keyboard patch** (KEYBOARD extra key + auto-show via termux-api;
+  TUI mouse capture stays **on** so the clickable buttons keep working)
 - fix `/etc/resolv.conf` for DNS if it is missing or broken
 
 ## Usage
@@ -87,9 +88,10 @@ uses them too) and your opencode config is untouched.
 | `opencode upgrade` reports failure but version stays the same | Run `opencode upgrade` again, or `sh install-grun.sh` (npm auto-detect) |
 | glibc binary fails when run directly | Normal — the glibc binary needs the glibc loader (`$PREFIX/glibc`); always run via the `opencode` launcher |
 | `sha1 mismatch` | Corrupted download. Delete `~/.cache/opencode-grun` and re-run |
-| Phone keyboard does not open when tapping the screen in opencode | The TUI captures taps as mouse events. Reinstall to get the patch: `sh install-grun.sh`, or for existing installs: `sh patch-keyboard.sh`. The fix sets `"mouse": false` in `~/.config/opencode/tui.json` (TUI mouse capture), adds the KEYBOARD extra key, and auto-shows the keyboard via termux-api. Note: the TUI mouse setting lives in `tui.json`, not `config.json` |
+| Phone keyboard does not open when tapping the screen in opencode | Expected — with mouse capture ON (default) taps are clicks on TUI buttons, like on Windows. Type using the **KEYBOARD** extra key (added by the patch), or hold it to auto-show at launch |
+| TUI buttons are not clickable anymore (patch rev < 5) | The old patch wrote `"mouse": false` to `~/.config/opencode/tui.json` which kills the clickable buttons. Fix: `rm -f ~/.config/opencode/tui.json`, or reinstall: `sh install-grun.sh` (rev 5+ removes it automatically) |
 | Messy TUI screen | `export TERM=xterm-256color` before `opencode` |
-| Installer output does not show `rev 4` | Downloaded installer is an old cached version (GitHub raw CDN cache). Re-download or use a commit URL: `curl -L -o install-grun.sh https://raw.githubusercontent.com/DamnSit/open-code-termux/main/install-grun.sh?x=$(date +%s)` |
+| Installer output does not show `rev 5` | Downloaded installer is an old cached version (GitHub raw CDN cache). Re-download or use a commit URL: `curl -L -o install-grun.sh https://raw.githubusercontent.com/DamnSit/open-code-termux/main/install-grun.sh?x=$(date +%s)` |
 
 ## How It Works
 
@@ -115,5 +117,5 @@ Solution:
 |---|---|
 | `install-grun.sh` | Installer — official glibc build + glibc-runner (claude-code-termux style), full `opencode upgrade` support |
 | `uninstall-grun.sh` | Removes the launcher + glibc/grun binary |
-| `patch-keyboard.sh` | Fixes the on-screen keyboard not opening in opencode (mouse capture off, KEYBOARD extra key, auto-show via termux-api) |
+| `patch-keyboard.sh` | On-screen keyboard helper — KEYBOARD extra key + auto-show via termux-api, keeps TUI mouse capture on so buttons stay clickable |
 | `opencode` | Binary — NOT in the repo (downloaded by the script from npm) |

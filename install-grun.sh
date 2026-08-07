@@ -7,7 +7,7 @@
 # ============================================================
 set -e
 
-INSTALLER_REV="4"
+INSTALLER_REV="5"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 WORK="$HOME/.cache/opencode-grun"
@@ -143,32 +143,13 @@ EOF
   fi
 fi
 
-# 4b. tui.json: matikan mouse capture
-mkdir -p "$(dirname "$TUI")"
-if [ ! -f "$TUI" ]; then
-  echo '{"mouse": false}' > "$TUI"
-  echo "[*] tui.json dibuat dengan mouse off"
-elif ! grep -q '"mouse"' "$TUI"; then
-  if command -v python3 >/dev/null 2>&1; then
-    python3 - "$TUI" <<'EOF'
-import json, sys
-p = sys.argv[1]
-try:
-    with open(p) as f:
-        t = json.load(f)
-except json.JSONDecodeError:
-    t = {}
-t["mouse"] = False
-with open(p, "w") as f:
-    json.dump(t, f, indent=2)
-    f.write("\n")
-EOF
-    echo "[*] mouse off ditambahkan ke tui.json"
-  else
-    echo "[!] tambah manual: \"mouse\": false di $TUI (atau: pkg install -y python)"
-  fi
-else
-  echo "[*] mouse sudah diatur di tui.json"
+# 4b. Jangan matikan mouse capture — tombol TUI yang bisa diklik
+#     (seperti di Windows) butuh mouse. Kalau tui.json berisi
+#     mouse:false dari patch lama, buang supaya mouse aktif lagi.
+#     Keyboard ditangani tombol KEYBOARD (4c) + auto-show (4d).
+if [ -f "$TUI" ] && grep -q '"mouse"[[:space:]]*:[[:space:]]*false' "$TUI"; then
+  rm -f "$TUI"
+  echo "[*] mouse capture TUI diaktifkan kembali (tombol bisa diklik)"
 fi
 
 # 4c. KEYBOARD extra key
@@ -189,7 +170,7 @@ if [ -f "$PREFIX/bin/opencode" ] && ! grep -q 'termux-keyboard-show' "$PREFIX/bi
   sed -i '/^unset LD_LIBRARY_PATH/a command -v termux-keyboard-show >/dev/null 2>\&1 \&\& termux-keyboard-show' "$PREFIX/bin/opencode"
 fi
 command -v termux-reload-settings >/dev/null 2>&1 && termux-reload-settings
-echo "[*] keyboard patch: mouse off (tui.json) + KEYBOARD key + auto-show"
+echo "[*] keyboard patch: mouse TUI aktif + KEYBOARD key + auto-show"
 
 # 4e. DNS fix: binary opencode (glibc/bun) me-parse /etc/resolv.conf
 #     sendiri. Kalau file tidak ada / kosong / hanya localhost,
